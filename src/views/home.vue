@@ -263,7 +263,7 @@ html {
 .novel-website {
   display: flex;
   flex-direction: column;
-  max-height: 100vh;
+  // max-height: 100vh;
   background-color: $background-color;
   color: $text-color;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;

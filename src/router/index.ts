@@ -2,25 +2,33 @@ import { createRouter, createWebHistory, RouteRecordRaw } from "vue-router";
 
 const routes: Array<RouteRecordRaw> = [
   {
-    //路由初始指向
     path: "/",
     name: "home",
     component: () => import("../views/Dashboard.vue"),
+    redirect: "/home", // 默认重定向到首页
     children: [
       {
-        path: "/bookList/:categoryId",
+        path: "home", // 注意：现在是相对路径，完整路径为 /home
+        name: "shouye",
+        component: () => import("../views/index.vue"),
+      },
+      {
+        path: "bookList/:categoryId", // 完整路径为 /bookList/:categoryId
         name: "bookList",
         component: () => import("../views/bookList.vue"),
       },
       {
-        path: '/home',
-        name: 'shouye',
-        component: () => import('../views/index.vue')
-      }
+        path: "bookInfo/:bookUrl", // 完整路径为 /bookInfo/:bookUrl
+        name: "bookInfo",
+        component: () => import("../views/bookInfo.vue"),
+      },
+      {
+        path: "bookInfo/:bookUrl/:chapterId", // 完整路径为 /bookInfo/:bookUrl/:chapterId
+        name: "chapterInfo",
+        component: () => import("../views/chapterInfo.vue"),
+      },
     ],
-    redirect: "/home",
   },
-
 ];
 
 const router = createRouter({
