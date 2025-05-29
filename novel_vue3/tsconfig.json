@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "useDefineForClassFields": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "strict": true,
+    "jsx": "preserve",
+    "sourceMap": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "esModuleInterop": true, 
+    "lib": ["esnext", "dom"],
+    "skipLibCheck": true,
+    // 允许编译 js 和 jsx 文件
+    "allowJs": true, 
+    // 尝试查找 js 文件的类型定义
+    "checkJs": true, 
+    //添加---
+    // "suppressImplicitAnyIndexErrors": true,		//允许字符串用作下标
+    "ignoreDeprecations":"5.0",		//高版本上句报错，此句解决。如此句报错可注释掉
+     "baseUrl": "./",  // 这里需要配置
+    "paths": {
+      "@/*": ["./src/*"]  // 这里需要配置
+      },
+     "composite": true,
+     "declaration": true		
+     //---------
+  },
+   "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"],
+  "exclude": ["node_modules"]
+}

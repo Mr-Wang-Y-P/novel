@@ -1,0 +1,26 @@
+@use 'sass:map'; // 导入 map 模块
+// Variables
+$primary-color: #2563eb;
+$secondary-color: #64748b;
+$background-color: #f8fafc;
+$text-color: #1e293b;
+$border-color: #e2e8f0;
+$shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+
+// 响应式断点
+$breakpoints: (
+  'mobile': 768px,
+  'tablet': 1024px,
+  'desktop': 1440px,
+  'large': 1920px
+);
+
+// 媒体查询混入
+@mixin respond-to($breakpoint) {
+  @if map.has-key($breakpoints, $breakpoint) {
+    // 使用 map.get 替代 map-get
+    @media (min-width: map.get($breakpoints, $breakpoint)) {
+      @content;
+    }
+  }
+}
