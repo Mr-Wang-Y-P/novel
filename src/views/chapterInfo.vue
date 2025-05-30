@@ -543,7 +543,7 @@ const readSentence = () => {
   // 使用 Web Speech API 朗读句子
   if (speechSynthesis && selectedVoice.value) {
     const utterance = new SpeechSynthesisUtterance(sentence);
-    utterance.voice = selectedVoice.value;
+    utterance.voice = selectedVoice.value as SpeechSynthesisVoice;
     utterance.rate = readingSpeed.value;
 
     utterance.onend = () => {
