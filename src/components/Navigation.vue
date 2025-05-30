@@ -47,7 +47,6 @@ watch(
   () => route.params.categoryId,
   (newCategoryId, oldCategoryId) => {
     if (newCategoryId !== oldCategoryId) {
-      console.log("route 参数变化，新的 categoryId:", newCategoryId);
       activeCategory.value = newCategoryId ? Number(newCategoryId) : -1;
       emits("category-change", activeCategory.value);
     }
@@ -63,7 +62,6 @@ onMounted(async () => {
   } catch (error) {
     console.error("获取分类数据失败:", error);
   }
-  console.log("route", route.params.categoryId);
   
   activeCategory.value = route.params.categoryId ? Number(route.params.categoryId) : -1;
   emits("category-change", activeCategory.value);

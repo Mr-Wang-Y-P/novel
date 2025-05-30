@@ -1,3 +1,10 @@
+/*
+ * @Author: 汪迎平
+ * @Date: 2025-05-30 08:23:11
+ * @LastEditTime: 2025-05-30 09:55:17
+ * @LastEditors: 汪迎平
+ * @Description: 
+ */
 // 导入请求封装模块
 import request from './request';
 import { bookInfo } from '@/interface/dashBoard'

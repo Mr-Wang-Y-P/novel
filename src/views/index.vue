@@ -27,6 +27,7 @@
                   v-for="(book, index) in allBooks[1]"
                   :key="index"
                   class="book-card featured"
+                  @click="jumpCharpter(book)"
                 >
                   <div class="book-cover">
                     <img :src="book.url_img" :alt="book.articlename" />
@@ -51,7 +52,7 @@
               >
                 <h3 class="section-subtitle">{{ getCategoryName(key) }}</h3>
                 <div class="book-content">
-                  <div v-for="(book, id) in books" :key="id" class="book-item">
+                  <div v-for="(book, id) in books" :key="id" class="book-item" @click="jumpCharpter(book)">
                     <div class="book-cover-small"></div>
                     <div class="book-details"></div>
                   </div>
@@ -64,7 +65,7 @@
               >
                 <h3 class="section-subtitle">{{ getCategoryName(key) }}</h3>
                 <div class="book-content">
-                  <div v-for="(book, id) in books" :key="id" class="book-item">
+                  <div v-for="(book, id) in books" :key="id" class="book-item" @click="jumpCharpter(book)">
                     <div class="book-cover-small">
                       <img :src="book.url_img" :alt="book.articlename" />
                     </div>
@@ -89,6 +90,7 @@
                   v-for="(book, index) in allBooks[1]"
                   :key="index"
                   class="ranking-item"
+                  @click="jumpCharpter(book)"
                 >
                   <span class="rank-number" :class="{ top: index < 3 }">{{
                     index + 1
@@ -159,6 +161,11 @@ const getCategoryName = (key: string) => {
   return category ? category.name : "未知分类";
 };
 
+const jumpCharpter = (novel: bookInfo) => {
+  const match = novel.url_list.match(/\/html\/(\d+)\//);
+  const bookInfoUrl = match ? match[1] : '';
+  router.push(`/bookInfo/${novel.sortid}/${bookInfoUrl}`);
+};
 
 
 
@@ -180,6 +187,8 @@ onMounted(async () => {
     console.error("获取数据出错:", error);
   }
 });
+
+
 
 </script>
 
@@ -221,6 +230,7 @@ onMounted(async () => {
   padding: clamp(2rem, 5vh, 4rem) 0;
   height: calc(100vh - 360px);
   overflow: auto;
+  @include hide-scrollbar;
   .container {
     display: grid;
     grid-template-columns: 1fr;
@@ -291,7 +301,7 @@ onMounted(async () => {
   display: flex;
   gap: clamp(1rem, 2vw, 1.5rem);
   transition: transform 0.3s, box-shadow 0.3s;
-
+  cursor: pointer;
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.15);
@@ -397,7 +407,7 @@ onMounted(async () => {
   display: flex;
   gap: clamp(0.8rem, 2vw, 1.2rem);
   transition: transform 0.3s;
-
+  cursor: pointer;
   &:hover {
     transform: translateX(4px);
   }
@@ -481,7 +491,7 @@ onMounted(async () => {
   align-items: center;
   gap: clamp(0.6rem, 2vw, 1rem);
   padding: clamp(0.4rem, 1vh, 0.6rem) 0;
-
+  cursor: pointer;
   .rank-number {
     width: clamp(1.5rem, 4vw, 2rem);
     height: clamp(1.5rem, 4vw, 2rem);
@@ -571,7 +581,6 @@ onMounted(async () => {
   .book-card.featured {
     flex-direction: column;
     text-align: center;
-
     .book-cover {
       align-self: center;
     }

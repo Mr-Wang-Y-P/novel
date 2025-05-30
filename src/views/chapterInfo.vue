@@ -1,30 +1,29 @@
 <template>
   <div class="novel-reader" :class="currentTheme">
-
     <!-- Reading Area -->
-    <main class="reading-area">
+    <main class="reading-area" ref="scrollArea">
       <div class="container">
         <!-- Reading Settings -->
         <div class="reading-settings">
           <div class="font-settings">
             <span class="setting-label">字体大小：</span>
             <div class="font-size-options">
-              <button 
-                class="font-size-btn" 
+              <button
+                class="font-size-btn"
                 :class="{ active: fontSize === 'small' }"
                 @click="setFontSize('small')"
               >
                 小
               </button>
-              <button 
-                class="font-size-btn" 
+              <button
+                class="font-size-btn"
                 :class="{ active: fontSize === 'medium' }"
                 @click="setFontSize('medium')"
               >
                 中
               </button>
-              <button 
-                class="font-size-btn" 
+              <button
+                class="font-size-btn"
                 :class="{ active: fontSize === 'large' }"
                 @click="setFontSize('large')"
               >
@@ -32,28 +31,28 @@
               </button>
             </div>
           </div>
-          
+
           <div class="theme-settings">
             <span class="setting-label">主题：</span>
             <div class="theme-options">
-              <button 
-                class="theme-btn light-theme" 
+              <button
+                class="theme-btn light-theme"
                 :class="{ active: currentTheme === 'light-theme' }"
                 @click="setTheme('light-theme')"
                 title="白色主题"
               >
                 <Sun :size="16" />
               </button>
-              <button 
-                class="theme-btn dark-theme" 
+              <button
+                class="theme-btn dark-theme"
                 :class="{ active: currentTheme === 'dark-theme' }"
                 @click="setTheme('dark-theme')"
                 title="黑色主题"
               >
                 <Moon :size="16" />
               </button>
-              <button 
-                class="theme-btn eye-care-theme" 
+              <button
+                class="theme-btn eye-care-theme"
                 :class="{ active: currentTheme === 'eye-care-theme' }"
                 @click="setTheme('eye-care-theme')"
                 title="护眼模式"
@@ -62,32 +61,30 @@
               </button>
             </div>
           </div>
-          
-          <div class="auto-read">
-            <button 
-              class="auto-read-btn" 
+          <div style="display: flex;">
+            <div class="auto-read">
+            <button
+              class="auto-read-btn"
               :class="{ active: isReading }"
               @click="toggleAutoRead"
             >
               <component :is="isReading ? Pause : Play" :size="16" />
-              {{ isReading ? '停止朗读' : '开始朗读' }}
+              {{ isReading ? "停止朗读" : "开始朗读" }}
             </button>
           </div>
           <div class="voice-settings">
-            <button 
-              class="voice-select-btn" 
-              @click="showVoiceSelector = true"
-             
-            >
+            <button class="voice-select-btn" @click="showVoiceSelector = true">
               <Mic :size="16" />
               语音选择
             </button>
           </div>
+          </div>
+          
         </div>
 
         <!-- Chapter Title -->
         <div class="chapter-title">
-          <h1>{{ novel.currentChapter.title }}</h1>
+          <h1>{{ novel?.title }}</h1>
         </div>
 
         <!-- Chapter Navigation -->
@@ -111,16 +108,19 @@
         </div>
 
         <!-- Chapter Content -->
-        <div 
-          class="chapter-content" 
-          :class="{ 
-            'font-small': fontSize === 'small', 
-            'font-medium': fontSize === 'medium', 
-            'font-large': fontSize === 'large' 
+        <div
+          class="chapter-content"
+          :class="{
+            'font-small': fontSize === 'small',
+            'font-medium': fontSize === 'medium',
+            'font-large': fontSize === 'large',
           }"
           ref="contentRef"
         >
-          <div 
+        <div class="paragraph" v-html="novel.content">
+
+        </div>
+          <!-- <div 
             v-for="(paragraphData, pIndex) in processedContent" 
             :key="pIndex" 
             class="paragraph"
@@ -138,7 +138,7 @@
             >
               {{ sentence }}{{ sIndex < paragraphData.sentences.length - 1 ? '。' : '' }}
             </span>
-          </div>
+          </div> -->
         </div>
 
         <!-- Chapter Navigation (Bottom) -->
@@ -175,13 +175,14 @@
         <div class="modal-body">
           <div class="toc-list">
             <div 
-              v-for="chapter in novel.chapters" 
-              :key="chapter.id" 
+              v-for="chapter in chapters" 
+              :key="chapter.url" 
               class="toc-item"
-              :class="{ active: chapter.id === novel.currentChapter.id }"
-              @click="selectChapter(chapter.id)"
+             
+              @click="selectChapter(chapter.url)"
             >
               {{ chapter.title }}
+               <!-- :class="{ active: chapter.id === novel.currentChapter.id }" -->
             </div>
           </div>
         </div>
@@ -191,13 +192,21 @@
     <!-- Floating Reading Controls -->
     <div class="floating-controls" v-if="isReading">
       <div class="control-panel">
-        <button class="control-btn" @click="adjustReadingSpeed(-0.25)" title="减慢语速">
+        <button
+          class="control-btn"
+          @click="adjustReadingSpeed(-0.25)"
+          title="减慢语速"
+        >
           <Rewind :size="16" />
         </button>
         <button class="control-btn" @click="toggleAutoRead" title="暂停/继续">
           <component :is="isReading ? Pause : Play" :size="20" />
         </button>
-        <button class="control-btn" @click="adjustReadingSpeed(0.25)" title="加快语速">
+        <button
+          class="control-btn"
+          @click="adjustReadingSpeed(0.25)"
+          title="加快语速"
+        >
           <FastForward :size="16" />
         </button>
         <div class="speed-indicator">{{ readingSpeed.toFixed(1) }}x</div>
@@ -215,21 +224,20 @@
         </div>
         <div class="modal-body">
           <div class="voice-list">
-            <div 
-              v-for="voice in availableVoices" 
+            <div
+              v-for="voice in availableVoices"
               :key="voice.name"
               class="voice-item"
-              :class="{ active: selectedVoice && selectedVoice.name === voice.name }"
+              :class="{
+                active: selectedVoice && selectedVoice.name === voice.name,
+              }"
               @click="selectVoice(voice)"
             >
               <div class="voice-info">
                 <div class="voice-name">{{ voice.name }}</div>
                 <div class="voice-lang">{{ voice.lang }}</div>
               </div>
-              <button 
-                class="preview-btn"
-                @click.stop="previewVoice(voice)"
-              >
+              <button class="preview-btn" @click.stop="previewVoice(voice)">
                 <Play :size="14" />
                 试听
               </button>
@@ -241,9 +249,34 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, reactive, onMounted, onUnmounted, watch, computed } from "vue";
-import { Search, Sun, Moon, Eye, Play, Pause, ChevronLeft, ChevronRight, List, Bookmark, X, Rewind, FastForward, Mic } from 'lucide-vue-next'
+import {
+  Search,
+  Sun,
+  Moon,
+  Eye,
+  Play,
+  Pause,
+  ChevronLeft,
+  ChevronRight,
+  List,
+  Bookmark,
+  X,
+  Rewind,
+  FastForward,
+  Mic,
+} from "lucide-vue-next";
+import { useRouter, useRoute } from "vue-router";
+import { getInfoData } from "../utils/api";
+
+const router = useRouter();
+const route = useRoute();
+
+// 定义变量存储路由参数
+const categoryId = ref<string>("");
+const bookUrl = ref<string>("");
+const chapterId = ref<string>("");
 
 // 响应式状态
 const searchQuery = ref("");
@@ -253,50 +286,82 @@ const isReading = ref(false);
 const showTableOfContents = ref(false);
 const currentParagraph = ref(0);
 const contentRef = ref(null);
-const readingSpeed = ref(1.0)
+const readingSpeed = ref(1.0);
 const currentSentence = ref(0);
-const selectedVoice = ref(null)
+const selectedVoice = ref(null);
 const showVoiceSelector = ref(false);
 let speechSynthesis = null;
 let currentVoice = null;
 
-const availableVoices  = ref([]);
+const availableVoices = ref([]);
 // 暂停位置记录
 const pausedPosition = reactive({
   paragraph: 0,
   sentence: 0,
 });
 
+const scrollArea = ref(null)
 // 模拟小说数据
-const novel = reactive({
-  id: 1,
-  title: "寻找走失的舰娘",
-  author: "深海作家",
-  currentChapter: {
-    id: 1,
-    title: "第一章 荒凉港区上的初遇",
-    content: [
-      "入目的尽是断壁残垣，荒凉满目，电线拉扯着已经烧成黑炭的电线杆载??21??在地上，二层楼高的小楼破了一个大窟窿，仓库的排风扇也爬满了蜘蛛网，而码头上高大的龙门吊也在日晒雨淋下已经锈得不成样子。",
-      "苏顾踩着一地的碎砖走进这座曾经辉煌现在已经衰落的镇守府，这里已经看不出一点曾经的样子，舰娘全部都离开了，又遭到深海舰娘的报复，如今只剩下满目疮痍。",
-      "他在具城的时候听说这里有一座荒废的镇守府，抱着好奇不惜走了好长时间来到这里，自从被海浪卷入深海每次从这里的海难爬起来，渐渐的了解到这里是和他所熟知的世界格格不入的地方。这里有着舰娘的存在，那是一种继承了沉没战舰之魂的少女，操纵着舰装有着无比强大的战力。",
-      "这里的舰娘和他过去所熟悉的游戏意外的相似，只是毕业后的一段时间里为了工作而忙碌，备考也相当花时间。那一款以舰娘为原型进行女性化的收集游戏，以前也很喜欢，只是到后来已经很长的时间都没有再碰过了，到后来荒废下来也就荒废下来了。",
-      "如今来到这里，对于这个世界奇怪的世界观来了兴趣，听说在附近有一座荒废的镇守府才是兴致高昂的跑过来。",
-      "此时他踩着一地的碎砖碎瓦看着杂草丛生的败落镇守府，一种恍如隔世的感觉突然升起来。",
-      '"请离开这里，这里很危险的。"一个抱着褐发玩偶有着粉色短发戴着猫耳耳扣的小女孩突然出现在他的面前，女稚嫩的声音没有一点威严，反而让人觉得很有趣。',
-      '苏顾笑着问道："你是，我想一想，小提尔比茨，儿童节的提尔比茨，你是为了在寻找最强的建造公式而旅行吧，于是来到这座镇守府希望找到宝藏。"他认得对方的造型，自顾自的为对方强加了设定，以前游戏中的小提尔比茨的设定就是拥有最强的建造公式，所以他就一直在想小提尔比茨一定做着类似于中华小当家那样为了最强厨具而努力的事情，只是不同的是她是为了最强的建造公式而到处旅行。',
-      '"最强建造公式什么的无所谓啦，我本来是这个镇守府的舰娘，但是以前提督突然离开了，镇守府就变成了现在这个样子。但是我希望镇守府的大家一起沉浸在幸福中，只要找到提督就可以了，最后把大家从世界各地再找回来，建造最棒的镇守府。"小提尔比茨接着自己怀中的玩偶这样说着，小女孩沐浴在阳光和微风下宛如小天使一般。',
-      '小提尔比茨如此说着突然想到什么东西，婴儿肥的小手上突然出现一把舰船一般的小手枪指着自己对面那个戴着墨镜的大人，一脸的警惕，"我为什么要对你说这些，还有你为什么知道我有最强的建造公式，你到底是什么人？"',
-      '"嘿嘿，小宅我可熟悉的。"',
-    ],
+// const novel = reactive({
+//   id: 1,
+//   title: "寻找走失的舰娘",
+//   author: "深海作家",
+//   currentChapter: {
+//     id: 1,
+//     title: "第一章 荒凉港区上的初遇",
+//     content: [
+//       "入目的尽是断壁残垣，荒凉满目，电线拉扯着已经烧成黑炭的电线杆载??21??在地上，二层楼高的小楼破了一个大窟窿，仓库的排风扇也爬满了蜘蛛网，而码头上高大的龙门吊也在日晒雨淋下已经锈得不成样子。",
+//       "苏顾踩着一地的碎砖走进这座曾经辉煌现在已经衰落的镇守府，这里已经看不出一点曾经的样子，舰娘全部都离开了，又遭到深海舰娘的报复，如今只剩下满目疮痍。",
+//       "他在具城的时候听说这里有一座荒废的镇守府，抱着好奇不惜走了好长时间来到这里，自从被海浪卷入深海每次从这里的海难爬起来，渐渐的了解到这里是和他所熟知的世界格格不入的地方。这里有着舰娘的存在，那是一种继承了沉没战舰之魂的少女，操纵着舰装有着无比强大的战力。",
+//       "这里的舰娘和他过去所熟悉的游戏意外的相似，只是毕业后的一段时间里为了工作而忙碌，备考也相当花时间。那一款以舰娘为原型进行女性化的收集游戏，以前也很喜欢，只是到后来已经很长的时间都没有再碰过了，到后来荒废下来也就荒废下来了。",
+//       "如今来到这里，对于这个世界奇怪的世界观来了兴趣，听说在附近有一座荒废的镇守府才是兴致高昂的跑过来。",
+//       "此时他踩着一地的碎砖碎瓦看着杂草丛生的败落镇守府，一种恍如隔世的感觉突然升起来。",
+//       '"请离开这里，这里很危险的。"一个抱着褐发玩偶有着粉色短发戴着猫耳耳扣的小女孩突然出现在他的面前，女稚嫩的声音没有一点威严，反而让人觉得很有趣。',
+//       '苏顾笑着问道："你是，我想一想，小提尔比茨，儿童节的提尔比茨，你是为了在寻找最强的建造公式而旅行吧，于是来到这座镇守府希望找到宝藏。"他认得对方的造型，自顾自的为对方强加了设定，以前游戏中的小提尔比茨的设定就是拥有最强的建造公式，所以他就一直在想小提尔比茨一定做着类似于中华小当家那样为了最强厨具而努力的事情，只是不同的是她是为了最强的建造公式而到处旅行。',
+//       '"最强建造公式什么的无所谓啦，我本来是这个镇守府的舰娘，但是以前提督突然离开了，镇守府就变成了现在这个样子。但是我希望镇守府的大家一起沉浸在幸福中，只要找到提督就可以了，最后把大家从世界各地再找回来，建造最棒的镇守府。"小提尔比茨接着自己怀中的玩偶这样说着，小女孩沐浴在阳光和微风下宛如小天使一般。',
+//       '小提尔比茨如此说着突然想到什么东西，婴儿肥的小手上突然出现一把舰船一般的小手枪指着自己对面那个戴着墨镜的大人，一脸的警惕，"我为什么要对你说这些，还有你为什么知道我有最强的建造公式，你到底是什么人？"',
+//       '"嘿嘿，小宅我可熟悉的。"',
+//     ],
+//   },
+//   chapters: [
+//     { id: 1, title: "第一章 荒凉港区上的初遇" },
+//     { id: 2, title: "第二章 重启的镇守府" },
+//     { id: 3, title: "第三章 初次出击" },
+//     { id: 4, title: "第四章 深海的威胁" },
+//     { id: 5, title: "第五章 意外的发现" },
+//   ],
+// });
+
+const novel = ref({});
+
+const chapters = ref([
+  { url: 1, title: "第一章 荒凉港区上的初遇" },
+  { url: 2, title: "第二章 重启的镇守府" },
+  { url: 3, title: "第三章 初次出击" },
+  { url: 4, title: "第四章 深海的威胁" },
+  { url: 5, title: "第五章 意外的发现" },
+]);
+// 监听路由变化
+watch(
+  () => [route.params.categoryId, route.params.bookUrl, route.params.chapterId],
+  ([newCategoryId, newBookUrl, newChapterId]) => {
+    if (newCategoryId) categoryId.value = String(newCategoryId);
+    if (newBookUrl) bookUrl.value = String(newBookUrl);
+    if (newChapterId) chapterId.value = String(newChapterId);
+
+    // 调用 API 获取数据
+    if (categoryId.value && bookUrl.value && chapterId.value) {
+      console.log(categoryId.value, bookUrl.value, chapterId.value);
+      const infoUrl = `/html/${bookUrl.value}/${chapterId.value}.html`;
+      getInfoData(infoUrl).then((res) => {
+        // 处理返回的数据
+        console.log(res);
+        novel.value = res;
+      });
+    }
   },
-  chapters: [
-    { id: 1, title: "第一章 荒凉港区上的初遇" },
-    { id: 2, title: "第二章 重启的镇守府" },
-    { id: 3, title: "第三章 初次出击" },
-    { id: 4, title: "第四章 深海的威胁" },
-    { id: 5, title: "第五章 意外的发现" },
-  ],
-});
+  { immediate: true }
+);
 
 // 方法
 
@@ -333,40 +398,55 @@ const setTheme = (theme) => {
 };
 
 const navigateChapter = (direction) => {
-  const currentIndex = novel.chapters.findIndex(
-    (chapter) => chapter.id === novel.currentChapter.id
-  );
-  let newIndex = currentIndex;
 
-  if (direction === "prev" && currentIndex > 0) {
-    newIndex = currentIndex - 1;
-  } else if (direction === "next" && currentIndex < novel.chapters.length - 1) {
-    newIndex = currentIndex + 1;
+  if(direction === "next") {
+    // console.log(categoryId.value, bookUrl.value, chapterId.value);
+    const nextChapterId = Number(chapterId.value) + 1;
+    router.push(`/bookInfo/${categoryId.value}/${bookUrl.value}/${nextChapterId}`);
+    // const infoUrl = `/html/${bookUrl.value}/${chapterId.value}.html`;
+    // getInfoData(infoUrl).then((res) => {
+    //     // 处理返回的数据
+    //     console.log(res);
+    //     novel.value = res;
+    //   });
+  } else {
+    const prevChapterId = Number(chapterId.value) - 1;
+    router.push(`/bookInfo/${categoryId.value}/${bookUrl.value}/${prevChapterId}`);
   }
+  // const currentIndex = novel.chapters.findIndex(
+  //   (chapter) => chapter.id === novel.currentChapter.id
+  // );
+  // let newIndex = currentIndex;
 
-  if (newIndex !== currentIndex) {
-    // 在实际应用中，这里应该加载新章节内容
-    console.log(`导航到章节: ${novel.chapters[newIndex].title}`);
+  // if (direction === "prev" && currentIndex > 0) {
+  //   newIndex = currentIndex - 1;
+  // } else if (direction === "next" && currentIndex < novel.chapters.length - 1) {
+  //   newIndex = currentIndex + 1;
+  // }
 
-    // 模拟章节切换
-    novel.currentChapter = {
-      ...novel.chapters[newIndex],
-      content: novel.currentChapter.content,
-    };
+  // if (newIndex !== currentIndex) {
+  //   // 在实际应用中，这里应该加载新章节内容
+  //   console.log(`导航到章节: ${novel.chapters[newIndex].title}`);
 
-    // 滚动到顶部
-    window.scrollTo({ top: 0, behavior: "smooth" });
-
-    // 重置朗读状态
-    if (isReading.value) {
-      stopReading();
-    }
-    pausedPosition.paragraph = 0;
-    pausedPosition.sentence = 0;
+  //   // 模拟章节切换
+  //   novel.currentChapter = {
+  //     ...novel.chapters[newIndex],
+  //     content: novel.currentChapter.content,
+  //   };
+  if(scrollArea.value) {
+    scrollArea.value.scrollTo({ top: 0, behavior: "smooth" });
   }
+  //   // 滚动到顶部
+    // window.scrollTo({ top: 0, behavior: "smooth" });
+
+  //   // 重置朗读状态
+  //   if (isReading.value) {
+  //     stopReading();
+  //   }
+  //   pausedPosition.paragraph = 0;
+  //   pausedPosition.sentence = 0;
+  // }
 };
-
-
 
 const selectChapter = (chapterId) => {
   const chapter = novel.chapters.find((c) => c.id === chapterId);
@@ -510,39 +590,37 @@ const scrollToCurrentSentence = () => {
 
 // 语音选择相关方法
 const selectVoice = (voice) => {
-  selectedVoice.value = voice
-  localStorage.setItem('reader-voice', voice.name)
-  showVoiceSelector.value = false
-  
+  selectedVoice.value = voice;
+  localStorage.setItem("reader-voice", voice.name);
+  showVoiceSelector.value = false;
+
   // 如果正在朗读，重新开始当前句子以应用新语音
   if (isReading.value) {
-    speechSynthesis.cancel()
+    speechSynthesis.cancel();
     setTimeout(() => {
       if (isReading.value) {
-        readSentence()
+        readSentence();
       }
-    }, 100)
+    }, 100);
   }
-}
+};
 
 const previewVoice = (voice) => {
   if (speechSynthesis.speaking) {
-    speechSynthesis.cancel()
+    speechSynthesis.cancel();
   }
-  
-  const utterance = new SpeechSynthesisUtterance('这是语音预览，您好！')
-  utterance.voice = voice
-  utterance.rate = readingSpeed.value
-  speechSynthesis.speak(utterance)
-}
+
+  const utterance = new SpeechSynthesisUtterance("这是语音预览，您好！");
+  utterance.voice = voice;
+  utterance.rate = readingSpeed.value;
+  speechSynthesis.speak(utterance);
+};
 
 const loadVoices = () => {
-const voices = speechSynthesis.getVoices();
-  availableVoices.value = voices.filter(v =>
-    v.lang.includes("zh")
-  );
+  const voices = speechSynthesis.getVoices();
+  availableVoices.value = voices.filter((v) => v.lang.includes("zh"));
   console.log(availableVoices.value);
-}
+};
 
 // 加载用户偏好
 onMounted(async () => {
@@ -561,12 +639,12 @@ onMounted(async () => {
   if (window.speechSynthesis) {
     speechSynthesis = window.speechSynthesis;
 
-    speechSynthesis.onvoiceschanged = async() => {
+    speechSynthesis.onvoiceschanged = async () => {
       await loadVoices(); // automatically reload voices
     };
 
     await loadVoices(); // initial load
-    }
+  }
 });
 
 // 清理资源
@@ -735,7 +813,8 @@ html {
   width: 100%;
   margin: 0 auto;
   padding: 0 4vw;
-
+  box-sizing: border-box;
+  // @include hide-scrollbar;
   @include respond-to("mobile") {
     max-width: 750px;
     padding: 0 2rem;
@@ -909,7 +988,7 @@ html {
       align-items: center;
       justify-content: center;
       transition: all 0.3s;
-
+      color: inherit;
       &:hover {
         background: rgba(0, 0, 0, 0.05);
       }
@@ -971,6 +1050,7 @@ html {
     border-radius: 20px;
     border: 1px solid $border-color;
     background: transparent;
+    color: inherit;
     cursor: pointer;
     transition: all 0.3s;
     font-size: 0.9rem;
@@ -1202,7 +1282,7 @@ html {
   display: flex;
   align-items: center;
   gap: 0.8rem;
-
+  width: 190px;
   .voice-select-btn {
     display: flex;
     align-items: center;
@@ -1214,6 +1294,7 @@ html {
     cursor: pointer;
     transition: all 0.3s;
     font-size: 0.9rem;
+    color: inherit;
 
     &:hover:not(:disabled) {
       background: rgba(0, 0, 0, 0.05);
@@ -1352,6 +1433,18 @@ html {
         }
       }
     }
+  }
+}
+
+
+@media screen and (max-width: 768px) {
+  .reading-area .container .reading-settings {
+    padding: 0.5rem;
+    gap: 0.5rem;
+    zoom: 0.6;
+  }
+  .modal .modal-content {
+    zoom: 0.7;
   }
 }
 </style>

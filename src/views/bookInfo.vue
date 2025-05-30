@@ -1,12 +1,10 @@
 <template>
-  <div class="bookInfo" :class="currentTheme">
+  <div class="bookInfo" :class="currentTheme" ref="chapterList">
     <!-- Breadcrumb -->
     <div class="breadcrumb">
       <div class="container">
         <div class="breadcrumb-content">
           <a href="#" class="breadcrumb-item">书海阁</a>
-          <span class="breadcrumb-separator">&gt;</span>
-          <a href="#" class="breadcrumb-item">{{ novel.category }}</a>
           <span class="breadcrumb-separator">&gt;</span>
           <span class="breadcrumb-item current">{{ novel.title }}</span>
 
@@ -39,14 +37,15 @@
               </div>
               <div class="meta-item">
                 <span class="meta-label">更新：</span>
-                <span class="meta-value">{{ novel.lastUpdate }}</span>
+                <span class="meta-value">{{ novel.updateDate }}</span>
               </div>
               <div class="meta-item">
                 <span class="meta-label">最新：</span>
                 <span class="meta-value latest-chapter">
-                  <a :href="`#chapter-${novel.latestChapter.id}`">{{
+                  <!-- <a :href="`#chapter-${novel.latestChapter.id}`">{{
                     novel.latestChapter.title
-                  }}</a>
+                  }}</a> -->
+                  {{ novel.latestChapter?.title }}
                 </span>
               </div>
             </div>
@@ -62,15 +61,8 @@
             </div>
             <div class="novel-description">
               <div class="description-label">内容简介：</div>
-              <div class="description-content">{{ novel.description }}</div>
-            </div>
-            <div class="novel-tags">
-              <span class="tag-label">新书推荐：</span>
-              <div class="tags-list">
-                <a v-for="tag in novel.tags" :key="tag" href="#" class="tag">{{
-                  tag
-                }}</a>
-              </div>
+              <div class="description-content">{{ novel.shortDesc }}</div>
+              <div class="description-content">{{ novel.extraDesc }}</div>
             </div>
           </div>
         </div>
@@ -78,7 +70,7 @@
     </section>
 
     <!-- Chapter List -->
-    <section class="chapter-list" ref="chapterList">
+    <section class="chapter-list">
       <div class="container">
         <div class="section-header">
           <h2 class="section-title">{{ novel.title }}最新章节列表</h2>
@@ -86,7 +78,7 @@
         <div class="chapter-grid">
           <div
             v-for="(chapter, index) in novel.chapters"
-            :key="chapter.id"
+            :key="chapter.url"
             class="chapter-item"
             @click="handleChapterClick(chapter)"
           >
@@ -99,11 +91,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from "vue";
+import { ref, reactive, watchEffect } from "vue";
 import { Search, Bookmark, BookOpen, Import } from "lucide-vue-next";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
+import { getBooksData }  from "../utils/api";
 
 const router = useRouter();
+const route = useRoute();
+const bookUrl = ref('')
+const categoryType = ref(1)
+
 // 定义分类数据接口
 interface Category {
   id: string;
@@ -112,23 +109,21 @@ interface Category {
 
 // 定义章节数据接口
 interface Chapter {
-  id: number;
+  url: string;
   title: string;
 }
 
 // 定义小说数据接口
 interface Novel {
-  id: number;
   title: string;
   author: string;
-  category: string;
+  extraDesc: string;
+  shortDesc: string;
   status: string;
   lastUpdate: string;
   cover: string;
-  description: string;
-  tags: string[];
   latestChapter: {
-    id: number;
+    url: string;
     title: string;
   };
   chapters: Chapter[];
@@ -139,67 +134,42 @@ const searchQuery = ref<string>("");
 const activeCategory = ref<string>("fantasy");
 const currentTheme = ref<string>("light-theme");
 
-// 分类数据
-const categories: Category[] = [
-  { id: "home", name: "首页" },
-  { id: "fantasy", name: "玄幻" },
-  { id: "urban", name: "都市" },
-  { id: "romance", name: "言情" },
-  { id: "martial", name: "武侠" },
-  { id: "history", name: "历史" },
-  { id: "scifi", name: "科幻" },
-  { id: "game", name: "网游" },
-  { id: "completed", name: "完本" },
-];
 
 // DOM 引用
 const chapterList = ref<HTMLElement | null>(null);
 
 // 小说数据
-const novel = reactive<Novel>({
-  id: 1,
-  title: "万相之王",
-  author: "天蚕土豆",
-  category: "玄幻奇幻",
-  status: "连载",
-  lastUpdate: "2025-05-29 05:10:10",
-  cover: "/placeholder.svg?height=300&width=220&text=万相之王",
-  description: "天地间有万相，我李洛，终将成为那万相之王。11w0-2530",
-  tags: [
-    "北境冒险笔记",
-    "乡村猎艳记",
-    "从一人开始统治仙山",
-    "通天之路",
-    "老张的春天",
-    "万相之王",
-    "诡诱",
-    "乡村猎艳记",
-    "地也凹凸",
-    "花都至尊",
-  ],
-  latestChapter: {
-    id: 1661,
-    title: "第一千六百六十一章 大古融约",
-  },
-  chapters: Array.from({ length: 75 }, (_, i) => ({
-    id: i + 1,
-    title: `${i + 1}章`,
-  })),
+const novel = ref<Novel>({});
+
+const boolInfoId = ref<string>('');
+
+
+// 监听路由参数变化
+watchEffect(() => {
+  const bookId = route.params.bookUrl;
+  const categoryId = route.params.categoryId;
+  boolInfoId.value = bookId? bookId : '';
+
+  if(bookId) {
+    bookUrl.value = `/html/${bookId}/`;
+    getBooksData(bookUrl.value).then((res) => {
+      novel.value = res;
+    })
+  }
+  if(categoryId) {
+    const id = Number(categoryId);
+    if(!isNaN(id)) {
+      categoryType.value = id;
+    } else {
+      categoryType.value = -1;
+    }
+  } else {
+    categoryType.value = -1;
+  }
 });
 
-// 方法定义
-
-const handleSearch = () => {
-  console.log("搜索:", searchQuery.value);
-};
-
-const setActiveCategory = (categoryId: string) => {
-  activeCategory.value = categoryId;
-};
-
 const startReading = () => {
-  console.log("开始阅读:", novel.title);
-  alert("即将开始阅读：" + novel.title);
+  router.push(`/bookInfo/${categoryType.value}/${boolInfoId.value}/1`);
 };
 
 const scrollToBottom = () => {
@@ -213,9 +183,12 @@ const scrollToBottom = () => {
 };
 
 const handleChapterClick = (chapter: Chapter) => {
-  console.log("点击章节:", chapter.title);
+  console.log("点击章节:", chapter);
   //   alert('即将开始阅读：' + chapter.title)
-  router.push(`/bookInfo/${novel.id}/${chapter.id}`);
+  // bookInfo/:categoryId/:bookUrl/:chapterId
+   const match = chapter.url.match(/\/html(.*?)\.html$/);
+  const chapterPath = match ? match[1] : '';
+  router.push(`/bookInfo/${categoryType.value}${chapterPath}`);
 };
 </script>
 
@@ -223,7 +196,7 @@ const handleChapterClick = (chapter: Chapter) => {
 // Variables
 $primary-color: #2563eb;
 $secondary-color: #64748b;
-$background-color: #f8fafc;
+$background-color: #fff;
 $text-color: #1e293b;
 $border-color: #e2e8f0;
 $shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
@@ -234,6 +207,9 @@ $action-color: #f97316; // 橙色按钮
   height: 100%;
   display: flex;
   flex-direction: column;
+  overflow: auto;
+  @include hide-scrollbar;
+  padding: 1rem;
 }
 
 // Breadcrumb
@@ -451,7 +427,7 @@ $action-color: #f97316; // 橙色按钮
 .chapter-list {
   padding: 2rem 0;
   flex: 1;
-  overflow: auto;
+  // overflow: auto;
   .section-header {
     margin-bottom: 1.5rem;
 

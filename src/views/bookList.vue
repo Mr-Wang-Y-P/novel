@@ -1,7 +1,7 @@
 <!--
  * @Author: 汪迎平
  * @Date: 2025-05-29 11:51:17
- * @LastEditTime: 2025-05-29 17:31:26
+ * @LastEditTime: 2025-05-30 10:17:20
  * @LastEditors: 汪迎平
  * @Description: 书籍列表页面
 -->
@@ -24,7 +24,7 @@
           <!-- 数据加载完成显示书籍列表 -->
           <template v-else>
            
-              <div v-for="(novel, index) in novels" :key="index" class="novel-card">
+              <div v-for="(novel, index) in novels" :key="index" class="novel-card" @click="jumpCharpter(novel)">
               <div class="novel-cover">
                 <img
                   :src="novel.url_img"
@@ -144,7 +144,6 @@ watch(
   () => route.params.categoryId,
   (newCategoryId, oldCategoryId) => {
     if (newCategoryId !== oldCategoryId) {
-      console.log("route 参数变化，新的 categoryId:", newCategoryId);
       categoryId.value = Number(newCategoryId);
       page.value = 1; // 重置页码
       noMoreData.value = false; // 重置没有更多数据状态
@@ -155,9 +154,12 @@ watch(
   },
   { immediate: false }
 );
-
+const jumpCharpter = (novel: bookInfo) => {
+  const match = novel.url_list.match(/\/html\/(\d+)\//);
+  const bookInfoUrl = match ? match[1] : '';
+  router.push(`/bookInfo/${novel.sortid}/${bookInfoUrl}`);
+};
 const fetchData = () => {
-  page.value = page.value + 1; // 重置页码
   fetchNovels();
 };
 
@@ -167,7 +169,7 @@ const fetchData = () => {
 .books-list {
   padding: 2rem;
   flex: 1;
-  height: calc(100vh - 260px);
+  height: 100%;
   overflow: auto;
   .novel-list-container {
     width: 100%;
@@ -188,7 +190,7 @@ const fetchData = () => {
     border-radius: 8px;
     overflow: hidden;
     transition: box-shadow 0.3s;
-
+    cursor: pointer;
     &:hover {
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }

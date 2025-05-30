@@ -18,12 +18,12 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import("../views/bookList.vue"),
       },
       {
-        path: "bookInfo/:bookUrl", // 完整路径为 /bookInfo/:bookUrl
+        path: "bookInfo/:categoryId/:bookUrl", // 完整路径为 /bookInfo/:bookUrl
         name: "bookInfo",
         component: () => import("../views/bookInfo.vue"),
       },
       {
-        path: "bookInfo/:bookUrl/:chapterId", // 完整路径为 /bookInfo/:bookUrl/:chapterId
+        path: "bookInfo/:categoryId/:bookUrl/:chapterId", // 完整路径为 /bookInfo/:bookUrl/:chapterId
         name: "chapterInfo",
         component: () => import("../views/chapterInfo.vue"),
       },

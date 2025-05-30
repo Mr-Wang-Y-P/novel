@@ -2,7 +2,7 @@
 // Variables
 $primary-color: #2563eb;
 $secondary-color: #64748b;
-$background-color: #f8fafc;
+$background-color: #fff;
 $text-color: #1e293b;
 $border-color: #e2e8f0;
 $shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
@@ -23,4 +23,17 @@ $breakpoints: (
       @content;
     }
   }
+}
+
+@mixin hide-scrollbar {
+  /* 适用于 Chrome、Safari 和 Opera */
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* 适用于 IE 和 Edge */
+  -ms-overflow-style: none;
+
+  /* 适用于 Firefox */
+  scrollbar-width: none;
 }

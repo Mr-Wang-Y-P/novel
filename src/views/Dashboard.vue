@@ -147,6 +147,7 @@ html {
 .novel-website {
   display: flex;
   flex-direction: column;
+  height: 100vh;
   // max-height: 100vh;
   background-color: $background-color;
   color: $text-color;
@@ -157,10 +158,11 @@ html {
     z-index: 1000;
   }
   .body {
-    // flex: 1;
-    height: calc(100vh - 260px);
+    flex: 1;
+    // height: calc(100vh - 260px);
     display: flex;
     flex-direction: column;
+    overflow: hidden;
   }
 }
 
