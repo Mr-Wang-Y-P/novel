@@ -171,6 +171,7 @@ const fetchData = () => {
   flex: 1;
   height: 100%;
   overflow: auto;
+  @include hide-scrollbar;
   .novel-list-container {
     width: 100%;
     height: 100%;

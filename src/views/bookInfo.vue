@@ -76,6 +76,22 @@
           <h2 class="section-title">{{ novel.title }}最新章节列表</h2>
         </div>
         <div class="chapter-grid">
+          <!-- <a-list
+            :style="{ width: `600px` }"
+            :virtualListProps="{
+              height: 560,
+            }"
+            :data="novel.chapters"
+          >
+            <template #item="{ item, index }">
+              <a-list-item :key="index">
+                <div class="chapter-item">
+                  {{ item.title }}
+                </div>
+              </a-list-item>
+            </template>
+           
+          </a-list> -->
           <div
             v-for="(chapter, index) in novel.chapters"
             :key="chapter.url"
@@ -87,6 +103,10 @@
         </div>
       </div>
     </section>
+    <a-back-top
+      target-container=".bookInfo"
+      :style="{ position: 'absolute' }"
+    />
   </div>
 </template>
 
@@ -94,12 +114,12 @@
 import { ref, reactive, watchEffect } from "vue";
 import { Search, Bookmark, BookOpen, Import } from "lucide-vue-next";
 import { useRouter, useRoute } from "vue-router";
-import { getBooksData }  from "../utils/api";
+import { getBooksData } from "../utils/api";
 
 const router = useRouter();
 const route = useRoute();
-const bookUrl = ref('')
-const categoryType = ref(1)
+const bookUrl = ref("");
+const categoryType = ref(1);
 
 // 定义分类数据接口
 interface Category {
@@ -115,18 +135,19 @@ interface Chapter {
 
 // 定义小说数据接口
 interface Novel {
-  title: string;
-  author: string;
-  extraDesc: string;
-  shortDesc: string;
-  status: string;
+  title?: string;
+  author?: string;
+  extraDesc?: string;
+  shortDesc?: string;
+  status?: string;
   lastUpdate: string;
-  cover: string;
-  latestChapter: {
+  cover?: string;
+  updateDate?: string;
+  latestChapter?: {
     url: string;
     title: string;
   };
-  chapters: Chapter[];
+  chapters?: Chapter[];
 }
 
 // 响应式状态
@@ -134,31 +155,44 @@ const searchQuery = ref<string>("");
 const activeCategory = ref<string>("fantasy");
 const currentTheme = ref<string>("light-theme");
 
-
 // DOM 引用
 const chapterList = ref<HTMLElement | null>(null);
 
 // 小说数据
-const novel = ref<Novel>({});
+const novel = ref<Novel>({
+  title: "",
+  author: "",
+  extraDesc: "",
+  shortDesc: "",
+  status: "",
+  lastUpdate: "",
+  cover: "",
+  updateDate: "",
+  latestChapter: {
+    url: "",
+    title: "",
+  },
+  chapters: [],
+});
 
-const boolInfoId = ref<string>('');
-
+const boolInfoId = ref<string>("");
 
 // 监听路由参数变化
 watchEffect(() => {
   const bookId = route.params.bookUrl;
   const categoryId = route.params.categoryId;
-  boolInfoId.value = bookId? bookId : '';
+  // 判断 bookId 类型，若为数组则取首个元素，否则直接使用
+  boolInfoId.value = Array.isArray(bookId) ? bookId[0] : bookId || "";
 
-  if(bookId) {
+  if (bookId) {
     bookUrl.value = `/html/${bookId}/`;
     getBooksData(bookUrl.value).then((res) => {
       novel.value = res;
-    })
+    });
   }
-  if(categoryId) {
+  if (categoryId) {
     const id = Number(categoryId);
-    if(!isNaN(id)) {
+    if (!isNaN(id)) {
       categoryType.value = id;
     } else {
       categoryType.value = -1;
@@ -186,8 +220,8 @@ const handleChapterClick = (chapter: Chapter) => {
   console.log("点击章节:", chapter);
   //   alert('即将开始阅读：' + chapter.title)
   // bookInfo/:categoryId/:bookUrl/:chapterId
-   const match = chapter.url.match(/\/html(.*?)\.html$/);
-  const chapterPath = match ? match[1] : '';
+  const match = chapter.url.match(/\/html(.*?)\.html$/);
+  const chapterPath = match ? match[1] : "";
   router.push(`/bookInfo/${categoryType.value}${chapterPath}`);
 };
 </script>

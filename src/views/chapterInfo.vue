@@ -61,25 +61,27 @@
               </button>
             </div>
           </div>
-          <div style="display: flex;">
+          <div style="display: flex">
             <div class="auto-read">
-            <button
-              class="auto-read-btn"
-              :class="{ active: isReading }"
-              @click="toggleAutoRead"
-            >
-              <component :is="isReading ? Pause : Play" :size="16" />
-              {{ isReading ? "停止朗读" : "开始朗读" }}
-            </button>
+              <button
+                class="auto-read-btn"
+                :class="{ active: isReading }"
+                @click="toggleAutoRead"
+              >
+                <component :is="isReading ? Pause : Play" :size="16" />
+                {{ isReading ? "停止朗读" : "开始朗读" }}
+              </button>
+            </div>
+            <div class="voice-settings">
+              <button
+                class="voice-select-btn"
+                @click="showVoiceSelector = true"
+              >
+                <Mic :size="16" />
+                语音选择
+              </button>
+            </div>
           </div>
-          <div class="voice-settings">
-            <button class="voice-select-btn" @click="showVoiceSelector = true">
-              <Mic :size="16" />
-              语音选择
-            </button>
-          </div>
-          </div>
-          
         </div>
 
         <!-- Chapter Title -->
@@ -97,10 +99,6 @@
             <List :size="20" />
             目录
           </button>
-          <button class="nav-btn" @click="addBookmark">
-            <Bookmark :size="20" />
-            存书签
-          </button>
           <button class="nav-btn" @click="navigateChapter('next')">
             下一章
             <ChevronRight :size="20" />
@@ -117,12 +115,9 @@
           }"
           ref="contentRef"
         >
-        <div class="paragraph" v-html="novel.content">
-
-        </div>
-          <!-- <div 
-            v-for="(paragraphData, pIndex) in processedContent" 
-            :key="pIndex" 
+          <div
+            v-for="(paragraphData, pIndex) in processedContent"
+            :key="pIndex"
             class="paragraph"
           >
             <span
@@ -130,15 +125,22 @@
               :key="sIndex"
               :data-paragraph="pIndex"
               :data-sentence="sIndex"
-              :class="{ 
-                'reading-sentence': isReading && currentParagraph === pIndex && currentSentence === sIndex,
-                'read-sentence': isReading && (pIndex < currentParagraph || (pIndex === currentParagraph && sIndex < currentSentence))
+              :class="{
+                'reading-sentence':
+                  isReading &&
+                  currentParagraph === pIndex &&
+                  currentSentence === sIndex,
+                'read-sentence':
+                  isReading &&
+                  (pIndex < currentParagraph ||
+                    (pIndex === currentParagraph && sIndex < currentSentence)),
               }"
               class="sentence"
             >
-              {{ sentence }}{{ sIndex < paragraphData.sentences.length - 1 ? '。' : '' }}
+              {{ sentence
+              }}{{ sIndex < paragraphData.sentences.length - 1 ? "。" : "" }}
             </span>
-          </div> -->
+          </div>
         </div>
 
         <!-- Chapter Navigation (Bottom) -->
@@ -150,10 +152,6 @@
           <button class="nav-btn" @click="showTableOfContents = true">
             <List :size="20" />
             目录
-          </button>
-          <button class="nav-btn" @click="addBookmark">
-            <Bookmark :size="20" />
-            存书签
           </button>
           <button class="nav-btn" @click="navigateChapter('next')">
             下一章
@@ -174,15 +172,15 @@
         </div>
         <div class="modal-body">
           <div class="toc-list">
-            <div 
-              v-for="chapter in chapters" 
-              :key="chapter.url" 
+            <div
+              v-for="chapter in chapters"
+              :key="chapter.url"
               class="toc-item"
-             
+              :class="{ active: chapter.url === chapterUrl }"
               @click="selectChapter(chapter.url)"
             >
               {{ chapter.title }}
-               <!-- :class="{ active: chapter.id === novel.currentChapter.id }" -->
+             
             </div>
           </div>
         </div>
@@ -231,13 +229,13 @@
               :class="{
                 active: selectedVoice && selectedVoice.name === voice.name,
               }"
-              @click="selectVoice(voice)"
+              @click="selectVoice(voice as SpeechSynthesisVoice)"
             >
               <div class="voice-info">
                 <div class="voice-name">{{ voice.name }}</div>
                 <div class="voice-lang">{{ voice.lang }}</div>
               </div>
-              <button class="preview-btn" @click.stop="previewVoice(voice)">
+              <button class="preview-btn" @click.stop="previewVoice(voice as SpeechSynthesisVoice)">
                 <Play :size="14" />
                 试听
               </button>
@@ -268,39 +266,63 @@ import {
   Mic,
 } from "lucide-vue-next";
 import { useRouter, useRoute } from "vue-router";
-import { getInfoData } from "../utils/api";
+import { getInfoData, getBooksData } from "../utils/api";
 
 const router = useRouter();
 const route = useRoute();
 
 // 定义变量存储路由参数
+interface RouteParams {
+  categoryId: string;
+  bookUrl: string;
+  chapterId: string;
+}
+
+interface Chapter {
+  url: string;
+  title: string;
+}
+
+interface NovelData {
+  title: string;
+  content: string;
+  chapters?: Chapter[];
+}
+
+// 定义变量存储路由参数
 const categoryId = ref<string>("");
 const bookUrl = ref<string>("");
 const chapterId = ref<string>("");
-
+const chapterUrl = ref<string>("");
 // 响应式状态
-const searchQuery = ref("");
+
 const fontSize = ref("medium");
 const currentTheme = ref("light-theme");
 const isReading = ref(false);
 const showTableOfContents = ref(false);
 const currentParagraph = ref(0);
-const contentRef = ref(null);
+const contentRef = ref<HTMLElement | null>(null);
 const readingSpeed = ref(1.0);
 const currentSentence = ref(0);
-const selectedVoice = ref(null);
+const selectedVoice = ref<SpeechSynthesisVoice | null | Voice>(null);
 const showVoiceSelector = ref(false);
-let speechSynthesis = null;
-let currentVoice = null;
+let speechSynthesis: SpeechSynthesis | null = null;
+let currentVoice: SpeechSynthesisVoice | null = null;
 
-const availableVoices = ref([]);
+interface Voice {
+  name: string;
+  lang: string;
+  localService: boolean;
+}
+
+const availableVoices = ref<Voice[]>([]);
 // 暂停位置记录
 const pausedPosition = reactive({
   paragraph: 0,
   sentence: 0,
 });
 
-const scrollArea = ref(null)
+const scrollArea = ref<HTMLElement | null>(null);
 // 模拟小说数据
 // const novel = reactive({
 //   id: 1,
@@ -332,15 +354,9 @@ const scrollArea = ref(null)
 //   ],
 // });
 
-const novel = ref({});
+const novel = ref<NovelData>({ title: "", content: "" });
 
-const chapters = ref([
-  { url: 1, title: "第一章 荒凉港区上的初遇" },
-  { url: 2, title: "第二章 重启的镇守府" },
-  { url: 3, title: "第三章 初次出击" },
-  { url: 4, title: "第四章 深海的威胁" },
-  { url: 5, title: "第五章 意外的发现" },
-]);
+const chapters = ref<Chapter[]>([]);
 // 监听路由变化
 watch(
   () => [route.params.categoryId, route.params.bookUrl, route.params.chapterId],
@@ -351,13 +367,15 @@ watch(
 
     // 调用 API 获取数据
     if (categoryId.value && bookUrl.value && chapterId.value) {
-      console.log(categoryId.value, bookUrl.value, chapterId.value);
       const infoUrl = `/html/${bookUrl.value}/${chapterId.value}.html`;
       getInfoData(infoUrl).then((res) => {
-        // 处理返回的数据
-        console.log(res);
         novel.value = res;
       });
+      const url = `/html/${bookUrl.value}/`;
+      getBooksData(url).then((res) => {
+        chapters.value = res.chapters;
+      });
+      chapterUrl.value = `/html/${bookUrl.value}/${chapterId.value}.html`;
     }
   },
   { immediate: true }
@@ -365,115 +383,73 @@ watch(
 
 // 方法
 
-// 将段落拆分为句子的函数
-const splitIntoSentences = (text) => {
-  // 按中文句号、问号、感叹号等标点符号拆分
-  return text
-    .split(/[。！？；…]+/)
-    .filter((sentence) => sentence.trim().length > 0);
-};
 
-// 获取处理后的章节内容（拆分为句子）
-const processedContent = computed(() => {
-  return novel.currentChapter.content.map((paragraph) => ({
-    original: paragraph,
-    sentences: splitIntoSentences(paragraph),
+// 处理小说内容，拆分为段落和句子
+interface ProcessedContent {
+  sentences: string[];
+}
+
+const processedContent = computed<ProcessedContent[]>(() => {
+  if (!novel.value.content) return [];
+  // 移除 HTML 标签
+  const textContent = novel.value.content.replace(/<[^>]*>/g, "");
+  return textContent.split(/<br><br>/).map((paragraph) => ({
+    sentences: paragraph.split(/[。！？]/).filter((s) => s.trim()),
   }));
 });
 
-const handleSearch = () => {
-  console.log("搜索:", searchQuery.value);
-};
-
-const setFontSize = (size) => {
+const setFontSize = (size: string) => {
   fontSize.value = size;
   // 保存用户偏好
   localStorage.setItem("reader-font-size", size);
 };
 
-const setTheme = (theme) => {
+const setTheme = (theme: string) => {
   currentTheme.value = theme;
   // 保存用户偏好
   localStorage.setItem("reader-theme", theme);
 };
 
-const navigateChapter = (direction) => {
-
-  if(direction === "next") {
-    // console.log(categoryId.value, bookUrl.value, chapterId.value);
+const navigateChapter = (direction: string) => {
+  if (direction === "next") {
     const nextChapterId = Number(chapterId.value) + 1;
-    router.push(`/bookInfo/${categoryId.value}/${bookUrl.value}/${nextChapterId}`);
-    // const infoUrl = `/html/${bookUrl.value}/${chapterId.value}.html`;
-    // getInfoData(infoUrl).then((res) => {
-    //     // 处理返回的数据
-    //     console.log(res);
-    //     novel.value = res;
-    //   });
+    if (nextChapterId > chapters.value.length) {
+      alert("已经是最后一章了");
+      return;
+    }
+    router.push(
+      `/bookInfo/${categoryId.value}/${bookUrl.value}/${nextChapterId}`
+    );
   } else {
     const prevChapterId = Number(chapterId.value) - 1;
-    router.push(`/bookInfo/${categoryId.value}/${bookUrl.value}/${prevChapterId}`);
+    if (prevChapterId < 1) {
+      alert("已经是第一章了");
+      return;
+    }
+    router.push(
+      `/bookInfo/${categoryId.value}/${bookUrl.value}/${prevChapterId}`
+    );
   }
-  // const currentIndex = novel.chapters.findIndex(
-  //   (chapter) => chapter.id === novel.currentChapter.id
-  // );
-  // let newIndex = currentIndex;
-
-  // if (direction === "prev" && currentIndex > 0) {
-  //   newIndex = currentIndex - 1;
-  // } else if (direction === "next" && currentIndex < novel.chapters.length - 1) {
-  //   newIndex = currentIndex + 1;
-  // }
-
-  // if (newIndex !== currentIndex) {
-  //   // 在实际应用中，这里应该加载新章节内容
-  //   console.log(`导航到章节: ${novel.chapters[newIndex].title}`);
-
-  //   // 模拟章节切换
-  //   novel.currentChapter = {
-  //     ...novel.chapters[newIndex],
-  //     content: novel.currentChapter.content,
-  //   };
-  if(scrollArea.value) {
+  if (scrollArea.value) {
     scrollArea.value.scrollTo({ top: 0, behavior: "smooth" });
   }
-  //   // 滚动到顶部
-    // window.scrollTo({ top: 0, behavior: "smooth" });
 
-  //   // 重置朗读状态
-  //   if (isReading.value) {
-  //     stopReading();
-  //   }
-  //   pausedPosition.paragraph = 0;
-  //   pausedPosition.sentence = 0;
-  // }
 };
 
-const selectChapter = (chapterId) => {
-  const chapter = novel.chapters.find((c) => c.id === chapterId);
-  if (chapter) {
-    novel.currentChapter = {
-      ...chapter,
-      content: novel.currentChapter.content,
-    };
-    showTableOfContents.value = false;
-    window.scrollTo({ top: 0, behavior: "smooth" });
+const selectChapter = (infoUrl: string) => {
 
-    // 重置朗读状态
+  const matchResult = infoUrl.match(/\/html\/(.*?)\.html$/);
+  const extractedUrl = matchResult ? matchResult[1] : "";
+
+  router.push(`/bookInfo/${categoryId.value}/${extractedUrl}`);
+  showTableOfContents.value = false;
+  
+  // 重置朗读状态
     if (isReading.value) {
       stopReading();
     }
-    pausedPosition.paragraph = 0;
-    pausedPosition.sentence = 0;
-  }
 };
 
-const addBookmark = () => {
-  // 在实际应用中，这里应该保存书签
-  console.log("添加书签:", novel.currentChapter.title);
-
-  // 显示提示
-  alert("书签添加成功！");
-};
 
 // 更新的自动朗读功能
 const toggleAutoRead = () => {
@@ -486,7 +462,6 @@ const toggleAutoRead = () => {
 
 const startReading = () => {
   isReading.value = true;
-
   // 从头开始
   currentParagraph.value = 0;
   currentSentence.value = 0;
@@ -498,7 +473,6 @@ const startReading = () => {
 
 const resumeReading = () => {
   isReading.value = true;
-
   // 从暂停位置继续
   currentParagraph.value = pausedPosition.paragraph;
   currentSentence.value = pausedPosition.sentence;
@@ -512,6 +486,7 @@ const pauseReading = () => {
   // 记录暂停位置
   pausedPosition.paragraph = currentParagraph.value;
   pausedPosition.sentence = currentSentence.value;
+  speechSynthesis?.cancel();
 };
 
 const stopReading = () => {
@@ -550,7 +525,7 @@ const readSentence = () => {
       if (isReading.value) {
         readSentence();
       }
-    }, 800);
+    }, 300);
     return;
   }
 
@@ -565,13 +540,36 @@ const readSentence = () => {
   // 滚动到当前句子
   scrollToCurrentSentence();
 
-  // 模拟阅读速度
-  setTimeout(() => {
-    if (isReading.value) {
+  // 使用 Web Speech API 朗读句子
+  if (speechSynthesis && selectedVoice.value) {
+    const utterance = new SpeechSynthesisUtterance(sentence);
+    utterance.voice = selectedVoice.value;
+    utterance.rate = readingSpeed.value;
+
+    utterance.onend = () => {
+      if (isReading.value) {
+        currentSentence.value++;
+        readSentence();
+      }
+    };
+
+    utterance.onerror = (event) => {
+      console.error('语音朗读出错:', event.error);
       currentSentence.value++;
       readSentence();
-    }
-  }, 300);
+    };
+
+    speechSynthesis.speak(utterance);
+  } else {
+    console.warn('语音合成不可用，使用模拟阅读速度');
+    // 语音合成不可用时，回退到模拟阅读速度
+    setTimeout(() => {
+      if (isReading.value) {
+        currentSentence.value++;
+        readSentence();
+      }
+    }, 300);
+  }
 };
 
 const scrollToCurrentSentence = () => {
@@ -589,14 +587,14 @@ const scrollToCurrentSentence = () => {
 };
 
 // 语音选择相关方法
-const selectVoice = (voice) => {
+const selectVoice = (voice: SpeechSynthesisVoice) => {
   selectedVoice.value = voice;
   localStorage.setItem("reader-voice", voice.name);
   showVoiceSelector.value = false;
 
   // 如果正在朗读，重新开始当前句子以应用新语音
   if (isReading.value) {
-    speechSynthesis.cancel();
+    speechSynthesis?.cancel();
     setTimeout(() => {
       if (isReading.value) {
         readSentence();
@@ -605,22 +603,33 @@ const selectVoice = (voice) => {
   }
 };
 
-const previewVoice = (voice) => {
-  if (speechSynthesis.speaking) {
+const previewVoice = (voice: SpeechSynthesisVoice) => {
+  if (speechSynthesis?.speaking) {
     speechSynthesis.cancel();
   }
 
   const utterance = new SpeechSynthesisUtterance("这是语音预览，您好！");
   utterance.voice = voice;
   utterance.rate = readingSpeed.value;
-  speechSynthesis.speak(utterance);
+  speechSynthesis?.speak(utterance);
 };
 
-const loadVoices = () => {
-  const voices = speechSynthesis.getVoices();
-  availableVoices.value = voices.filter((v) => v.lang.includes("zh"));
-  console.log(availableVoices.value);
+const loadVoices = async() => {
+  const voices = await speechSynthesis?.getVoices();
+  availableVoices.value = voices?.filter(
+    (v) => v.lang.includes("zh") && v.localService
+  ) || [];
+  if(!selectedVoice.value && availableVoices.value.length > 0) {
+    // 直接赋值，因为类型已经匹配
+    selectedVoice.value = availableVoices.value[0];
+    // 保存用户偏好
+    localStorage.setItem("reader-voice", availableVoices.value[0].name);
+  }
 };
+
+const adjustReadingSpeed = (delta:  number) => {
+  readingSpeed.value = Math.max(0.5, Math.min(2.5, readingSpeed.value + delta))
+}
 
 // 加载用户偏好
 onMounted(async () => {
@@ -639,11 +648,15 @@ onMounted(async () => {
   if (window.speechSynthesis) {
     speechSynthesis = window.speechSynthesis;
 
-    speechSynthesis.onvoiceschanged = async () => {
-      await loadVoices(); // automatically reload voices
-    };
+    // speechSynthesis.onvoiceschanged = async () => {
+    //   await loadVoices(); // automatically reload voices
+    // };
 
     await loadVoices(); // initial load
+    setTimeout(() => {
+      // 延迟加载，避免在页面加载时触发
+      loadVoices();
+    }, 1000);
   }
 });
 
@@ -685,14 +698,6 @@ $breakpoints: (
   "large": 1920px,
 );
 
-// 媒体查询混入
-@mixin respond-to($breakpoint) {
-  @if map-has-key($breakpoints, $breakpoint) {
-    @media (min-width: map-get($breakpoints, $breakpoint)) {
-      @content;
-    }
-  }
-}
 
 // 主题混入
 @mixin theme($bg, $text, $secondary) {
@@ -896,9 +901,9 @@ html {
       cursor: pointer;
       transition: background-color 0.3s;
 
-      &:hover {
-        background-color: darken($primary-color, 10%);
-      }
+      // &:hover {
+      //   background-color: darken($primary-color, 10%);
+      // }
     }
   }
 
@@ -926,9 +931,9 @@ html {
   color: white;
   border-color: $primary-color;
 
-  &:hover {
-    background: darken($primary-color, 10%);
-  }
+  // &:hover {
+  //   background: darken($primary-color, 10%);
+  // }
 }
 
 .btn-secondary {
@@ -946,6 +951,7 @@ html {
   padding-bottom: clamp(3rem, 8vh, 5rem);
   flex: 1;
   overflow: auto;
+  @include hide-scrollbar;
 }
 
 // Reading Settings
@@ -1180,7 +1186,7 @@ html {
       padding: 1rem 0;
       max-height: calc(80vh - 4rem);
       overflow-y: auto;
-
+      @include hide-scrollbar;
       .toc-list {
         .toc-item {
           padding: 1rem 1.5rem;
@@ -1435,7 +1441,6 @@ html {
     }
   }
 }
-
 
 @media screen and (max-width: 768px) {
   .reading-area .container .reading-settings {
